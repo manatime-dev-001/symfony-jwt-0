@@ -6,6 +6,7 @@ use Jose\Component\Core\AlgorithmManager;
 use Jose\Component\Core\JWK;
 use Jose\Component\Signature\Algorithm\HS256;
 use Jose\Component\Signature\JWSBuilder;
+use Jose\Component\Signature\JWSLoader;
 use Jose\Component\Signature\JWSVerifier;
 use Jose\Component\Signature\Serializer\CompactSerializer;
 use Jose\Component\Signature\Serializer\JWSSerializerManager;
@@ -60,8 +61,6 @@ class JwtController extends AbstractController
         $algorithmManager = new AlgorithmManager([new HS256()]);
         $jwsVerifier = new JWSVerifier($algorithmManager);
 
-        // @todo: check header parameters here
-
         $jwk = new JWK([
             'kty' => 'oct',
             'k' => self::JWT_KEY,
@@ -69,16 +68,19 @@ class JwtController extends AbstractController
 
         $serializerManager = new JWSSerializerManager([new CompactSerializer()]);
 
-        $jws = $serializerManager->unserialize($token);
+        $jwsLoader = new JWSLoader(
+            $serializerManager,
+            $jwsVerifier,
+            null // @todo: add header checker manager here
+        );
 
-        $isVerified = $jwsVerifier->verifyWithKey($jws, $jwk, 0);
+        $signature = null;
 
-        $payload = json_decode($jws->getPayload());
+        $jws = $jwsLoader->loadAndVerifyWithKey($token, $jwk, $signature);
 
         return $this->json([
             'token' => $token,
-            'isVerified' => $isVerified,
-            'payload' => $payload,
+            'payload' => json_decode($jws->getPayload()),
         ]);
     }
 }
