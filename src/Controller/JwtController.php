@@ -13,7 +13,7 @@ use Jose\Component\Checker\IssuerChecker;
 use Jose\Component\Checker\NotBeforeChecker;
 use Jose\Component\Core\AlgorithmManager;
 use Jose\Component\Core\JWK;
-use Jose\Component\Signature\Algorithm\HS256;
+use Jose\Component\Signature\Algorithm\HS512;
 use Jose\Component\Signature\JWSBuilder;
 use Jose\Component\Signature\JWSTokenSupport;
 use Jose\Component\Signature\JWSVerifier;
@@ -31,7 +31,7 @@ class JwtController extends AbstractController
     public function getToken(): JsonResponse
     {
         $algorithmManager = new AlgorithmManager([
-            new HS256(),
+            new HS512(),
         ]);
 
         $jwk = new JWK([
@@ -52,7 +52,7 @@ class JwtController extends AbstractController
         $jws = $jwsBuilder
             ->create()
             ->withPayload($payload)
-            ->addSignature($jwk, ['alg' => 'HS256'])
+            ->addSignature($jwk, ['alg' => 'HS512'])
             ->build();
 
         $serializer = new CompactSerializer();
@@ -67,12 +67,12 @@ class JwtController extends AbstractController
     #[Route('/jwt/{token}', methods: ['GET'])]
     public function decodeToken(string $token): JsonResponse
     {
-        $algorithmManager = new AlgorithmManager([new HS256()]);
+        $algorithmManager = new AlgorithmManager([new HS512()]);
         $jwsVerifier = new JWSVerifier($algorithmManager);
 
         $headerCheckerManager = new HeaderCheckerManager(
             [
-                new AlgorithmChecker(['HS256']),
+                new AlgorithmChecker(['HS512']),
             ],
             [
                 new JWSTokenSupport(),
