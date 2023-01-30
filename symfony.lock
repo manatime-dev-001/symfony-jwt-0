@@ -281,5 +281,14 @@
     },
     "twig/extra-bundle": {
         "version": "v3.5.0"
+    },
+    "web-token/jwt-bundle": {
+        "version": "3.1",
+        "recipe": {
+            "repo": "github.com/Spomky-Labs/recipes",
+            "branch": "tree",
+            "version": "3.0",
+            "ref": "e9872ca728053c5a09ef09ec4712d430f30895d6"
+        }
     }
 }

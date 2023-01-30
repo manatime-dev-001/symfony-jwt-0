@@ -41,7 +41,8 @@
         "symfony/web-link": "5.4.*",
         "symfony/yaml": "5.4.*",
         "twig/extra-bundle": "^2.12|^3.0",
-        "twig/twig": "^2.12|^3.0"
+        "twig/twig": "^2.12|^3.0",
+        "web-token/jwt-bundle": "^3.1"
     },
     "config": {
         "allow-plugins": {
@@ -88,7 +89,11 @@
     "extra": {
         "symfony": {
             "allow-contrib": false,
-            "require": "5.4.*"
+            "require": "5.4.*",
+            "endpoint": [
+                "https://api.github.com/repos/Spomky-Labs/recipes/contents/index.json?ref=main",
+                "flex://defaults"
+            ]
         }
     },
     "require-dev": {
