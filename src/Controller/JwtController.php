@@ -2,11 +2,20 @@
 
 namespace App\Controller;
 
+use Exception;
+use Jose\Component\Checker\AlgorithmChecker;
+use Jose\Component\Checker\AudienceChecker;
+use Jose\Component\Checker\ClaimCheckerManager;
+use Jose\Component\Checker\ExpirationTimeChecker;
+use Jose\Component\Checker\HeaderCheckerManager;
+use Jose\Component\Checker\IssuedAtChecker;
+use Jose\Component\Checker\IssuerChecker;
+use Jose\Component\Checker\NotBeforeChecker;
 use Jose\Component\Core\AlgorithmManager;
 use Jose\Component\Core\JWK;
 use Jose\Component\Signature\Algorithm\HS256;
 use Jose\Component\Signature\JWSBuilder;
-use Jose\Component\Signature\JWSLoader;
+use Jose\Component\Signature\JWSTokenSupport;
 use Jose\Component\Signature\JWSVerifier;
 use Jose\Component\Signature\Serializer\CompactSerializer;
 use Jose\Component\Signature\Serializer\JWSSerializerManager;
@@ -61,6 +70,15 @@ class JwtController extends AbstractController
         $algorithmManager = new AlgorithmManager([new HS256()]);
         $jwsVerifier = new JWSVerifier($algorithmManager);
 
+        $headerCheckerManager = new HeaderCheckerManager(
+            [
+                new AlgorithmChecker(['HS256']),
+            ],
+            [
+                new JWSTokenSupport(),
+            ]
+        );
+
         $jwk = new JWK([
             'kty' => 'oct',
             'k' => self::JWT_KEY,
@@ -68,19 +86,31 @@ class JwtController extends AbstractController
 
         $serializerManager = new JWSSerializerManager([new CompactSerializer()]);
 
-        $jwsLoader = new JWSLoader(
-            $serializerManager,
-            $jwsVerifier,
-            null // @todo: add header checker manager here
-        );
+        $jws = $serializerManager->unserialize($token);
 
-        $signature = null;
+        $isVerified = $jwsVerifier->verifyWithKey($jws, $jwk, 0);
 
-        $jws = $jwsLoader->loadAndVerifyWithKey($token, $jwk, $signature);
+        if (!$isVerified) {
+            throw new Exception('The provided signature is invalid.');
+        }
+
+        $headerCheckerManager->check($jws, 0);
+
+        $claimCheckerManager = new ClaimCheckerManager([
+            new IssuedAtChecker(),
+            new NotBeforeChecker(),
+            new ExpirationTimeChecker(),
+            new IssuerChecker(['symfony-jwt-0-issuer']),
+            new AudienceChecker('symfony-jwt-0-consumer'),
+        ]);
+
+        $claims = json_decode($jws->getPayload(), true);
+
+        $claimCheckerManager->check($claims, ['iat', 'nbf', 'exp', 'iss', 'aud']);
 
         return $this->json([
             'token' => $token,
-            'payload' => json_decode($jws->getPayload()),
+            'claims' => $claims,
         ]);
     }
 }
