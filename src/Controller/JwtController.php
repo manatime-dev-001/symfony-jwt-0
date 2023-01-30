@@ -42,17 +42,20 @@ class JwtController extends AbstractController
         $jwsBuilder = new JWSBuilder($algorithmManager);
 
         $payload = json_encode([
-            'iat' => time(),
-            'nbf' => time(),
-            'exp' => time() + 3600,
-            'iss' => 'symfony-jwt-0-issuer',
-            'aud' => 'symfony-jwt-0-consumer',
+            'roles' => 'user',
         ]);
 
         $jws = $jwsBuilder
             ->create()
             ->withPayload($payload)
-            ->addSignature($jwk, ['alg' => 'HS512'])
+            ->addSignature($jwk, [
+                'alg' => 'HS512',
+                'iat' => time(),
+                'nbf' => time(),
+                'exp' => time() + 3600,
+                'iss' => 'symfony-jwt-0-issuer',
+                'aud' => 'symfony-jwt-0-consumer',
+            ])
             ->build();
 
         $serializer = new CompactSerializer();
@@ -73,6 +76,13 @@ class JwtController extends AbstractController
         $headerCheckerManager = new HeaderCheckerManager(
             [
                 new AlgorithmChecker(['HS512']),
+
+                new IssuedAtChecker(protectedHeaderOnly: true),
+                new NotBeforeChecker(protectedHeaderOnly: true),
+                new ExpirationTimeChecker(protectedHeaderOnly: true),
+
+                new IssuerChecker(['symfony-jwt-0-issuer'], protectedHeader: true),
+                new AudienceChecker('symfony-jwt-0-consumer', protectedHeader: true),
             ],
             [
                 new JWSTokenSupport(),
@@ -96,17 +106,11 @@ class JwtController extends AbstractController
 
         $headerCheckerManager->check($jws, 0);
 
-        $claimCheckerManager = new ClaimCheckerManager([
-            new IssuedAtChecker(),
-            new NotBeforeChecker(),
-            new ExpirationTimeChecker(),
-            new IssuerChecker(['symfony-jwt-0-issuer']),
-            new AudienceChecker('symfony-jwt-0-consumer'),
-        ]);
+        $claimCheckerManager = new ClaimCheckerManager([]);
 
         $claims = json_decode($jws->getPayload(), true);
 
-        $claimCheckerManager->check($claims, ['iat', 'nbf', 'exp', 'iss', 'aud']);
+        $claimCheckerManager->check($claims, ['roles']);
 
         return $this->json([
             'token' => $token,
