@@ -5,6 +5,7 @@
 # https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
 parameters:
     app.jwt_secret: '%env(resolve:JWT_SECRET)%'
+    app.jwt_lifetime: '%env(resolve:JWT_LIFETIME)%'
 
 services:
     # default configuration for services in *this* file

@@ -35,7 +35,7 @@ class JwtService
     private readonly JWK $jwk;
     private readonly Serializer $serializer;
 
-    public function __construct(ParameterBagInterface $parameterBag)
+    public function __construct(private readonly ParameterBagInterface $parameterBag)
     {
         $this->algorithmManager = new AlgorithmManager([
             new HS512(),
@@ -43,7 +43,7 @@ class JwtService
 
         $this->jwk = new JWK([
             'kty' => 'oct',
-            'k' => $parameterBag->get('app.jwt_secret'),
+            'k' => $this->parameterBag->get('app.jwt_secret'),
         ]);
 
         $this->serializer = new CompactSerializer();
@@ -63,7 +63,7 @@ class JwtService
                 'alg' => self::ALGORITHM_NAME,
                 'iat' => time(),
                 'nbf' => time(),
-                'exp' => time() + self::EXPIRES_IN,
+                'exp' => time() + intval($this->parameterBag->get('app.jwt_lifetime')),
                 'iss' => self::ISSUER,
                 'aud' => self::AUDIENCE,
             ])
