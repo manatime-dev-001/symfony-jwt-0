@@ -52,7 +52,7 @@ class JwtCookieAuthenticator extends AbstractAuthenticator
 
     public function onAuthenticationFailure(Request $request, AuthenticationException $exception): ?Response
     {
-        return new Response(status: Response::HTTP_UNAUTHORIZED);
+        return new Response($exception->getMessage(), status: Response::HTTP_UNAUTHORIZED);
     }
 
 //    public function start(Request $request, AuthenticationException $authException = null): Response

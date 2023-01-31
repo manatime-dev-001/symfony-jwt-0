@@ -3,6 +3,7 @@
 namespace App\Service;
 
 use App\Entity\User;
+use Doctrine\ORM\EntityManagerInterface;
 use Exception;
 use Jose\Component\Checker\AlgorithmChecker;
 use Jose\Component\Checker\AudienceChecker;
@@ -21,13 +22,12 @@ use Jose\Component\Signature\JWSVerifier;
 use Jose\Component\Signature\Serializer\CompactSerializer;
 use Jose\Component\Signature\Serializer\JWSSerializerManager;
 use Jose\Component\Signature\Serializer\Serializer;
+use Lib\Jwt\ClaimChecker\UserIdClaimChecker;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 
 class JwtService
 {
     private const ALGORITHM_NAME = 'HS512';
-    private const EXPIRES_IN = 3600;
-
     private const ISSUER = 'symfony-jwt-0';
     private const AUDIENCE = 'symfony-jwt-0';
 
@@ -35,8 +35,10 @@ class JwtService
     private readonly JWK $jwk;
     private readonly Serializer $serializer;
 
-    public function __construct(private readonly ParameterBagInterface $parameterBag)
-    {
+    public function __construct(
+        private readonly ParameterBagInterface $parameterBag,
+        private readonly EntityManagerInterface $entityManager,
+    ) {
         $this->algorithmManager = new AlgorithmManager([
             new HS512(),
         ]);
@@ -108,8 +110,7 @@ class JwtService
         $claims = json_decode($jws->getPayload(), true);
 
         $claimCheckerManager = new ClaimCheckerManager([
-            // @todo: create custom claim checker for `roles`
-            // @see: https://web-token.spomky-labs.com/the-components/claim-checker
+            new UserIdClaimChecker($this->entityManager),
         ]);
 
         $claimCheckerManager->check($claims, ['user_id']);
