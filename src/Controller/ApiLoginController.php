@@ -48,19 +48,4 @@ class ApiLoginController extends AbstractController
 
         return $response;
     }
-
-    #[Route('/api/verify/{token}')]
-    public function verify(string $token, JwtService $jwtService): JsonResponse
-    {
-        try {
-            $claims = $jwtService->decodeToken($token);
-        } catch (Exception $exception) {
-            return $this->json([
-                'status' => 'FAILED',
-                'error' => $exception
-            ], Response::HTTP_UNAUTHORIZED);
-        }
-
-        return $this->json($claims);
-    }
 }
